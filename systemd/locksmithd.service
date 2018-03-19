@@ -9,8 +9,8 @@ CPUShares=16
 MemoryLimit=32M
 PrivateDevices=true
 Environment=GOMAXPROCS=1
-EnvironmentFile=-/usr/share/coreos/update.conf
-EnvironmentFile=-/etc/coreos/update.conf
+EnvironmentFile=-/usr/share/flatcar/update.conf
+EnvironmentFile=-/etc/flatcar/update.conf
 ExecStart=/usr/lib/locksmith/locksmithd
 Restart=on-failure
 RestartSec=10s
