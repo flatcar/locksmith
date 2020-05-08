@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/coreos/locksmith/lock"
-	"github.com/coreos/locksmith/pkg/machineid"
+	"github.com/flatcar-linux/locksmith/lock"
+	"github.com/flatcar-linux/locksmith/pkg/machineid"
 )
 
 var (

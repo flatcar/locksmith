@@ -33,7 +33,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/coreos/locksmith/pkg/filelock"
+	"github.com/flatcar-linux/locksmith/pkg/filelock"
 )
 
 const UpdateCoordinatorConfPath = "/run/update-engine/coordinator.conf"

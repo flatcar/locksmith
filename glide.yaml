@@ -1,4 +1,4 @@
-package: github.com/coreos/locksmith
+package: github.com/flatcar-linux/locksmith
 import:
 - package: github.com/coreos/etcd
   version: v2.2.5

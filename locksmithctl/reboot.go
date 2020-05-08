@@ -19,8 +19,8 @@ import (
 	"os"
 
 	"github.com/coreos/go-systemd/login1"
-	"github.com/coreos/locksmith/lock"
-	"github.com/coreos/locksmith/pkg/machineid"
+	"github.com/flatcar-linux/locksmith/lock"
+	"github.com/flatcar-linux/locksmith/pkg/machineid"
 )
 
 var (

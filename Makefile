@@ -10,7 +10,7 @@ else
 endif
 
 VERSION=$(shell git describe --dirty)
-REPO=github.com/coreos/locksmith
+REPO=github.com/flatcar-linux/locksmith
 LD_FLAGS="-w -s -extldflags -static"
 
 export GOPATH=$(shell pwd)/gopath
@@ -19,7 +19,7 @@ export GOPATH=$(shell pwd)/gopath
 all: bin/locksmithctl
 
 gopath:
-	$(Q)mkdir -p gopath/src/github.com/coreos
+	$(Q)mkdir -p gopath/src/github.com/flatcar-linux
 	$(Q)ln -s ../../../.. gopath/src/$(REPO)
 
 GO_SOURCES := $(shell find . -type f -name "*.go")
