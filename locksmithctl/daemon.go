@@ -30,11 +30,11 @@ import (
 	"github.com/coreos/go-systemd/login1"
 	"github.com/coreos/pkg/capnslog"
 
-	"github.com/coreos/locksmith/lock"
-	"github.com/coreos/locksmith/pkg/coordinatorconf"
-	"github.com/coreos/locksmith/pkg/machineid"
-	"github.com/coreos/locksmith/pkg/timeutil"
-	"github.com/coreos/locksmith/updateengine"
+	"github.com/flatcar-linux/locksmith/lock"
+	"github.com/flatcar-linux/locksmith/pkg/coordinatorconf"
+	"github.com/flatcar-linux/locksmith/pkg/machineid"
+	"github.com/flatcar-linux/locksmith/pkg/timeutil"
+	"github.com/flatcar-linux/locksmith/updateengine"
 )
 
 const (
@@ -47,7 +47,7 @@ const (
 
 var (
 	// TODO(mischief): daemon is not really a seperate package. it probably should be.
-	dlog = capnslog.NewPackageLogger("github.com/coreos/locksmith", "daemon")
+	dlog = capnslog.NewPackageLogger("github.com/flatcar-linux/locksmith", "daemon")
 )
 
 const (
