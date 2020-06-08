@@ -33,8 +33,8 @@ test: | gopath
 
 .PHONY: vendor
 vendor:
-	$(Q)glide update --strip-vendor
-	$(Q)glide-vc --use-lock-file --no-tests --only-code
+	$(Q)go mod tidy
+	$(Q)go mod vendor
 
 .PHONY: clean
 clean:
