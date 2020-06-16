@@ -1,4 +1,4 @@
-// Copyright 2015 The etcd Authors
+// Copyright 2015 CoreOS, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,11 +21,7 @@ type ClusterError struct {
 }
 
 func (ce *ClusterError) Error() string {
-	s := ErrClusterUnavailable.Error()
-	for i, e := range ce.Errors {
-		s += fmt.Sprintf("; error #%d: %s\n", i, e)
-	}
-	return s
+	return ErrClusterUnavailable.Error()
 }
 
 func (ce *ClusterError) Detail() string {
