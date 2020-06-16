@@ -13,22 +13,16 @@ VERSION=$(shell git describe --dirty)
 REPO=github.com/flatcar-linux/locksmith
 LD_FLAGS="-w -s -extldflags -static"
 
-export GOPATH=$(shell pwd)/gopath
-
 .PHONY: all
 all: bin/locksmithctl
 
-gopath:
-	$(Q)mkdir -p gopath/src/github.com/flatcar-linux
-	$(Q)ln -s ../../../.. gopath/src/$(REPO)
-
 GO_SOURCES := $(shell find . -type f -name "*.go")
 
-bin/%: $(GO_SOURCES) | gopath
+bin/%: $(GO_SOURCES)
 	$(Q)go build -o $@ -ldflags $(LD_FLAGS) $(REPO)/$*
 
 .PHONY: test
-test: | gopath
+test:
 	$(Q)./scripts/test
 
 .PHONY: vendor
