@@ -1,5 +1,3 @@
-[![Build Status](https://travis-ci.org/godbus/dbus.svg?branch=master)](https://travis-ci.org/godbus/dbus)
-
 dbus
 ----
 
@@ -28,10 +26,6 @@ The complete package documentation and some simple examples are available at
 [godoc.org](http://godoc.org/github.com/godbus/dbus). Also, the
 [_examples](https://github.com/godbus/dbus/tree/master/_examples) directory
 gives a short overview over the basic usage. 
-
-#### Projects using godbus
-- [notify](https://github.com/esiqveland/notify) provides desktop notifications over dbus into a library.
-- [go-bluetooth](https://github.com/muka/go-bluetooth) provides a bluetooth client over bluez dbus API.
 
 Please note that the API is considered unstable for now and may change without
 further notice.

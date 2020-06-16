@@ -9,12 +9,13 @@ import (
 	"sync"
 )
 
+const defaultSystemBusAddress = "unix:path=/var/run/dbus/system_bus_socket"
+
 var (
 	systemBus     *Conn
 	systemBusLck  sync.Mutex
 	sessionBus    *Conn
 	sessionBusLck sync.Mutex
-	sessionEnvLck sync.Mutex
 )
 
 // ErrClosed is the error returned by calls on a closed connection.
@@ -31,7 +32,7 @@ var ErrClosed = errors.New("dbus: connection closed by user")
 type Conn struct {
 	transport
 
-	busObj BusObject
+	busObj *Object
 	unixFD bool
 	uuid   string
 
@@ -45,13 +46,15 @@ type Conn struct {
 	calls    map[uint32]*Call
 	callsLck sync.RWMutex
 
-	handler Handler
+	handlers    map[ObjectPath]map[string]interface{}
+	handlersLck sync.RWMutex
 
 	out    chan *Message
 	closed bool
 	outLck sync.RWMutex
 
-	signalHandler SignalHandler
+	signals    []chan<- *Signal
+	signalsLck sync.Mutex
 
 	eavesdropped    chan<- *Message
 	eavesdroppedLck sync.Mutex
@@ -86,33 +89,14 @@ func SessionBus() (conn *Conn, err error) {
 	return
 }
 
-func getSessionBusAddress() (string, error) {
-	sessionEnvLck.Lock()
-	defer sessionEnvLck.Unlock()
-	address := os.Getenv("DBUS_SESSION_BUS_ADDRESS")
-	if address != "" && address != "autolaunch:" {
-		return address, nil
-	}
-	return getSessionBusPlatformAddress()
-}
-
 // SessionBusPrivate returns a new private connection to the session bus.
 func SessionBusPrivate() (*Conn, error) {
-	address, err := getSessionBusAddress()
-	if err != nil {
-		return nil, err
+	address := os.Getenv("DBUS_SESSION_BUS_ADDRESS")
+	if address != "" && address != "autolaunch:" {
+		return Dial(address)
 	}
 
-	return Dial(address)
-}
-
-// SessionBusPrivate returns a new private connection to the session bus.
-func SessionBusPrivateHandler(handler Handler, signalHandler SignalHandler) (*Conn, error) {
-	address, err := getSessionBusAddress()
-	if err != nil {
-		return nil, err
-	}
-	return DialHandler(address, handler, signalHandler)
+	return sessionBusPlatform()
 }
 
 // SystemBus returns a shared connection to the system bus, connecting to it if
@@ -146,12 +130,11 @@ func SystemBus() (conn *Conn, err error) {
 
 // SystemBusPrivate returns a new private connection to the system bus.
 func SystemBusPrivate() (*Conn, error) {
-	return Dial(getSystemBusPlatformAddress())
-}
-
-// SystemBusPrivateHandler returns a new private connection to the system bus, using the provided handlers.
-func SystemBusPrivateHandler(handler Handler, signalHandler SignalHandler) (*Conn, error) {
-	return DialHandler(getSystemBusPlatformAddress(), handler, signalHandler)
+	address := os.Getenv("DBUS_SYSTEM_BUS_ADDRESS")
+	if address != "" {
+		return Dial(address)
+	}
+	return Dial(defaultSystemBusAddress)
 }
 
 // Dial establishes a new private connection to the message bus specified by address.
@@ -160,36 +143,21 @@ func Dial(address string) (*Conn, error) {
 	if err != nil {
 		return nil, err
 	}
-	return newConn(tr, NewDefaultHandler(), NewDefaultSignalHandler())
-}
-
-// DialHandler establishes a new private connection to the message bus specified by address, using the supplied handlers.
-func DialHandler(address string, handler Handler, signalHandler SignalHandler) (*Conn, error) {
-	tr, err := getTransport(address)
-	if err != nil {
-		return nil, err
-	}
-	return newConn(tr, handler, signalHandler)
+	return newConn(tr)
 }
 
 // NewConn creates a new private *Conn from an already established connection.
 func NewConn(conn io.ReadWriteCloser) (*Conn, error) {
-	return NewConnHandler(conn, NewDefaultHandler(), NewDefaultSignalHandler())
-}
-
-// NewConnHandler creates a new private *Conn from an already established connection, using the supplied handlers.
-func NewConnHandler(conn io.ReadWriteCloser, handler Handler, signalHandler SignalHandler) (*Conn, error) {
-	return newConn(genericTransport{conn}, handler, signalHandler)
+	return newConn(genericTransport{conn})
 }
 
 // newConn creates a new *Conn from a transport.
-func newConn(tr transport, handler Handler, signalHandler SignalHandler) (*Conn, error) {
+func newConn(tr transport) (*Conn, error) {
 	conn := new(Conn)
 	conn.transport = tr
 	conn.calls = make(map[uint32]*Call)
 	conn.out = make(chan *Message, 10)
-	conn.handler = handler
-	conn.signalHandler = signalHandler
+	conn.handlers = make(map[ObjectPath]map[string]interface{})
 	conn.nextSerial = 1
 	conn.serialUsed = map[uint32]bool{0: true}
 	conn.busObj = conn.Object("org.freedesktop.DBus", "/org/freedesktop/DBus")
@@ -198,7 +166,7 @@ func newConn(tr transport, handler Handler, signalHandler SignalHandler) (*Conn,
 
 // BusObject returns the object owned by the bus daemon which handles
 // administrative requests.
-func (conn *Conn) BusObject() BusObject {
+func (conn *Conn) BusObject() *Object {
 	return conn.busObj
 }
 
@@ -217,21 +185,16 @@ func (conn *Conn) Close() error {
 	close(conn.out)
 	conn.closed = true
 	conn.outLck.Unlock()
-
-	if term, ok := conn.signalHandler.(Terminator); ok {
-		term.Terminate()
+	conn.signalsLck.Lock()
+	for _, ch := range conn.signals {
+		close(ch)
 	}
-
-	if term, ok := conn.handler.(Terminator); ok {
-		term.Terminate()
-	}
-
+	conn.signalsLck.Unlock()
 	conn.eavesdroppedLck.Lock()
 	if conn.eavesdropped != nil {
 		close(conn.eavesdropped)
 	}
 	conn.eavesdroppedLck.Unlock()
-
 	return conn.transport.Close()
 }
 
@@ -340,35 +303,30 @@ func (conn *Conn) inWorker() {
 				// as per http://dbus.freedesktop.org/doc/dbus-specification.html ,
 				// sender is optional for signals.
 				sender, _ := msg.Headers[FieldSender].value.(string)
-				if iface == "org.freedesktop.DBus" && sender == "org.freedesktop.DBus" {
-					if member == "NameLost" {
-						// If we lost the name on the bus, remove it from our
-						// tracking list.
-						name, ok := msg.Body[0].(string)
-						if !ok {
-							panic("Unable to read the lost name")
+				if iface == "org.freedesktop.DBus" && member == "NameLost" &&
+					sender == "org.freedesktop.DBus" {
+
+					name, _ := msg.Body[0].(string)
+					conn.namesLck.Lock()
+					for i, v := range conn.names {
+						if v == name {
+							copy(conn.names[i:], conn.names[i+1:])
+							conn.names = conn.names[:len(conn.names)-1]
 						}
-						conn.namesLck.Lock()
-						for i, v := range conn.names {
-							if v == name {
-								conn.names = append(conn.names[:i],
-									conn.names[i+1:]...)
-							}
-						}
-						conn.namesLck.Unlock()
-					} else if member == "NameAcquired" {
-						// If we acquired the name on the bus, add it to our
-						// tracking list.
-						name, ok := msg.Body[0].(string)
-						if !ok {
-							panic("Unable to read the acquired name")
-						}
-						conn.namesLck.Lock()
-						conn.names = append(conn.names, name)
-						conn.namesLck.Unlock()
 					}
+					conn.namesLck.Unlock()
 				}
-				conn.handleSignal(msg)
+				signal := &Signal{
+					Sender: sender,
+					Path:   msg.Headers[FieldPath].value.(ObjectPath),
+					Name:   iface + "." + member,
+					Body:   msg.Body,
+				}
+				conn.signalsLck.Lock()
+				for _, ch := range conn.signals {
+					ch <- signal
+				}
+				conn.signalsLck.Unlock()
 			case TypeMethodCall:
 				go conn.handleCall(msg)
 			}
@@ -389,21 +347,6 @@ func (conn *Conn) inWorker() {
 	}
 }
 
-func (conn *Conn) handleSignal(msg *Message) {
-	iface := msg.Headers[FieldInterface].value.(string)
-	member := msg.Headers[FieldMember].value.(string)
-	// as per http://dbus.freedesktop.org/doc/dbus-specification.html ,
-	// sender is optional for signals.
-	sender, _ := msg.Headers[FieldSender].value.(string)
-	signal := &Signal{
-		Sender: sender,
-		Path:   msg.Headers[FieldPath].value.(ObjectPath),
-		Name:   iface + "." + member,
-		Body:   msg.Body,
-	}
-	conn.signalHandler.DeliverSignal(iface, member, signal)
-}
-
 // Names returns the list of all names that are currently owned by this
 // connection. The slice is always at least one element long, the first element
 // being the unique name of the connection.
@@ -417,7 +360,7 @@ func (conn *Conn) Names() []string {
 }
 
 // Object returns the object identified by the given destination name and path.
-func (conn *Conn) Object(dest string, path ObjectPath) BusObject {
+func (conn *Conn) Object(dest string, path ObjectPath) *Object {
 	return &Object{conn, dest, path}
 }
 
@@ -494,19 +437,7 @@ func (conn *Conn) Send(msg *Message, ch chan *Call) *Call {
 
 // sendError creates an error message corresponding to the parameters and sends
 // it to conn.out.
-func (conn *Conn) sendError(err error, dest string, serial uint32) {
-	var e *Error
-	switch em := err.(type) {
-	case Error:
-		e = &em
-	case *Error:
-		e = em
-	case DBusError:
-		name, body := em.DBusError()
-		e = NewError(name, body)
-	default:
-		e = MakeFailedError(err)
-	}
+func (conn *Conn) sendError(e Error, dest string, serial uint32) {
 	msg := new(Message)
 	msg.Type = TypeError
 	msg.serial = conn.getSerial()
@@ -549,30 +480,21 @@ func (conn *Conn) sendReply(dest string, serial uint32, values ...interface{}) {
 	conn.outLck.RUnlock()
 }
 
-func (conn *Conn) defaultSignalAction(fn func(h *defaultSignalHandler, ch chan<- *Signal), ch chan<- *Signal) {
-	if !isDefaultSignalHandler(conn.signalHandler) {
-		return
-	}
-	handler := conn.signalHandler.(*defaultSignalHandler)
-	fn(handler, ch)
-}
-
 // Signal registers the given channel to be passed all received signal messages.
 // The caller has to make sure that ch is sufficiently buffered; if a message
 // arrives when a write to c is not possible, it is discarded.
 //
-// Multiple of these channels can be registered at the same time.
+// Multiple of these channels can be registered at the same time. Passing a
+// channel that already is registered will remove it from the list of the
+// registered channels.
 //
 // These channels are "overwritten" by Eavesdrop; i.e., if there currently is a
 // channel for eavesdropped messages, this channel receives all signals, and
 // none of the channels passed to Signal will receive any signals.
 func (conn *Conn) Signal(ch chan<- *Signal) {
-	conn.defaultSignalAction((*defaultSignalHandler).addSignal, ch)
-}
-
-// RemoveSignal removes the given channel from the list of the registered channels.
-func (conn *Conn) RemoveSignal(ch chan<- *Signal) {
-	conn.defaultSignalAction((*defaultSignalHandler).removeSignal, ch)
+	conn.signalsLck.Lock()
+	conn.signals = append(conn.signals, ch)
+	conn.signalsLck.Unlock()
 }
 
 // SupportsUnixFDs returns whether the underlying transport supports passing of
@@ -632,7 +554,7 @@ type transport interface {
 }
 
 var (
-	transports = make(map[string]func(string) (transport, error))
+	transports map[string]func(string) (transport, error) = make(map[string]func(string) (transport, error))
 )
 
 func getTransport(address string) (transport, error) {
@@ -649,7 +571,6 @@ func getTransport(address string) (transport, error) {
 		f := transports[v[:i]]
 		if f == nil {
 			err = errors.New("dbus: invalid bus address (invalid or unsupported transport)")
-			continue
 		}
 		t, err = f(v[i+1:])
 		if err == nil {
@@ -673,11 +594,16 @@ func dereferenceAll(vs []interface{}) []interface{} {
 
 // getKey gets a key from a the list of keys. Returns "" on error / not found...
 func getKey(s, key string) string {
-	for _, keyEqualsValue := range strings.Split(s, ",") {
-		keyValue := strings.SplitN(keyEqualsValue, "=", 2)
-		if len(keyValue) == 2 && keyValue[0] == key {
-			return keyValue[1]
-		}
+	i := strings.Index(s, key)
+	if i == -1 {
+		return ""
 	}
-	return ""
+	if i+len(key)+1 >= len(s) || s[i+len(key)] != '=' {
+		return ""
+	}
+	j := strings.Index(s, ",")
+	if j == -1 {
+		j = len(s)
+	}
+	return s[i+len(key)+1 : j]
 }
