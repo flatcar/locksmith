@@ -3,9 +3,9 @@
 ORG_PATH="github.com/coreos"
 REPO_PATH="${ORG_PATH}/locksmith"
 
-PKGS=$(cd "gopath/src/${REPO_PATH}" && go list ./... | grep -v vendor)
+PKGS=$(go list ./... | grep -v vendor)
 FMT_DIRS=$(ls -d */ | grep -v vendor)
-LINTABLE=$(cd "gopath/src/${REPO_PATH}" && go list ./... | grep -v vendor)
+LINTABLE=$(go list ./... | grep -v vendor)
 
 echo "Running tests..."
 go test $PKGS -cover
