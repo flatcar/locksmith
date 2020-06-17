@@ -4,7 +4,7 @@ ORG_PATH="github.com/coreos"
 REPO_PATH="${ORG_PATH}/locksmith"
 
 PKGS=$(go list ./... | grep -v vendor)
-FMT_DIRS=$(ls -d */ | grep -v vendor)
+FMT_DIRS=$(ls -d */ | grep -v vendor | grep -v ^etcd)
 LINTABLE=$(go list ./... | grep -v vendor)
 
 echo "Running tests..."
