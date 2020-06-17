@@ -342,8 +342,8 @@ func runDaemon() int {
 	go ue.RebootNeededSignal(ch, stop)
 
 	r := rebooter{
-		strategy: strategy,
-		lgn:      lgn,
+		strategy:                 strategy,
+		lgn:                      lgn,
 		coordinatorConfigUpdater: coordinatorConf,
 	}
 
