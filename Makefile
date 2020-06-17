@@ -11,7 +11,7 @@ endif
 
 VERSION=$(shell git describe --dirty)
 REPO=github.com/flatcar-linux/locksmith
-LD_FLAGS="-w -s -extldflags -static"
+LD_FLAGS="-w -s"
 
 export GOPATH=$(shell pwd)/gopath
 
