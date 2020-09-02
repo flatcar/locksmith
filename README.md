@@ -1,8 +1,8 @@
 # locksmith
 
-locksmith is a reboot manager for the CoreOS update engine which is able to use
+locksmith is a reboot manager for the Flatcar update engine which is able to use
 etcd to ensure that only a subset of a cluster of machines are rebooting
-at any given time. `locksmithd` runs as a daemon on CoreOS machines and is
+at any given time. `locksmithd` runs as a daemon on Flatcar hosts and is
 responsible for controlling the reboot behaviour after updates.
 
 ## Configuration
@@ -31,7 +31,7 @@ and to otherwise follow the `reboot` strategy.
 ## Usage
 
 `locksmithctl` is a simple client that can be use to introspect and control the
-lock used by locksmith.  It is installed by default on CoreOS.
+lock used by locksmith.  It is installed by default on Flatcar Container Linux.
 
 Run `locksmithctl -help` for a list of command-line options.
 
@@ -92,7 +92,7 @@ lock with other machines in the same group.
 
 The purpose of groups is to allow faster updating of certain sets of machines
 while maintaining availability of certain services. For example, in a cluster
-of 5 CoreOS machines with all machines in the default group, if you have 2 load
+of 5 Flatcar hosts with all machines in the default group, if you have 2 load
 balancers and run `locksmithctl set-max 2`, then it is possible that both load
 balancers would be rebooted at the same time, interrupting the service they
 provide. However, if the load balancers are put into their own group named "lb",
@@ -182,8 +182,8 @@ For a client to take the lock, the document is swapped with this:
 
 ## Bugs
 
-Please use the [CoreOS issue tracker][bugs] to report all bugs, issues, and feature requests.
+Please use the [Flatcar issue tracker][bugs] to report all bugs, issues, and feature requests.
 
 [semaphore]: http://en.wikipedia.org/wiki/Semaphore_(programming)
-[cas]: https://coreos.com/etcd/docs/latest/api.html#atomic-compare-and-swap
-[bugs]: https://github.com/coreos/bugs/issues/new?labels=component/locksmith
+[cas]: https://etcd.io/docs/v3.3.12/learning/api/#transaction
+[bugs]: https://github.com/flatcar-linux/flatcar/issues/new
