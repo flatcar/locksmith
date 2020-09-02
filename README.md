@@ -17,13 +17,13 @@ engine has successfully applied an update:
 These strategies will either be followed immediately after an update, or during
 the next available [reboot window](#reboot-windows) if one has been configured.
 
-These strategies can be configured via `/etc/coreos/update.conf` with a line that looks like:
+These strategies can be configured via `/etc/flatcar/update.conf` with a line that looks like:
 
 ```
 REBOOT_STRATEGY=reboot
 ```
 
-The reboot strategy can also be configured through a [Container Linux Config](https://github.com/coreos/container-linux-config-transpiler/blob/master/doc/getting-started.md).
+The reboot strategy can also be configured through a [Container Linux Config](https://github.com/flatcar-linux/container-linux-config-transpiler/blob/master/doc/getting-started.md).
 
 The default strategy is to follow the `etcd-lock` strategy if etcd is running,
 and to otherwise follow the `reboot` strategy.
