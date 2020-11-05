@@ -4,8 +4,8 @@ github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f h1:lBNOc5arjvs8E5mO2tbp
 github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f/go.mod h1:E3G3o1h8I7cfcXa63jLwjI0eiQQMgzzUDFVpN/nH/eA=
 github.com/godbus/dbus v0.0.0-20141007185835-25a4b8ca48c6 h1:ktNNkmZO+GEJH27RAe03xbhUuXOFgAr5p59K25XYyhk=
 github.com/godbus/dbus v0.0.0-20141007185835-25a4b8ca48c6/go.mod h1:/YcGZj5zSblfDWMMoOzV4fas9FZnQYTkDnsGvmh2Grw=
-github.com/hashicorp/errwrap v1.0.0 h1:hLrqtEDnRye3+sgx6z4qVLNuviH3MR5aQ0ykNJa/UYA=
-github.com/hashicorp/errwrap v1.0.0/go.mod h1:YH+1FKiLXxHSkmPseP+kNlulaMuP3n2brvKWEqk/Jc4=
+github.com/hashicorp/errwrap v1.1.0 h1:OxrOeh75EUXMY8TBjag2fzXGZ40LB6IKw45YeGUDY2I=
+github.com/hashicorp/errwrap v1.1.0/go.mod h1:YH+1FKiLXxHSkmPseP+kNlulaMuP3n2brvKWEqk/Jc4=
 github.com/rkt/rkt v1.27.0 h1:WqQ40PMutsOMXvubNDKiA1Zieuhegr5bIKixxSBEckw=
 github.com/rkt/rkt v1.27.0/go.mod h1:V5VwmwHe6x1kflB4uXl1XJwXTgRISEMt2lZE6m6lXd0=
 golang.org/x/net v0.0.0-20160201052856-d513e58596cd h1:u9YqWFZbNek1vwz2T9UibRb81i9ibZErhrRGrhlQ/Ro=
