@@ -22,6 +22,8 @@ github.com/hashicorp/errwrap
 # github.com/rkt/rkt v1.30.0
 ## explicit
 github.com/rkt/rkt/pkg/lock
+# golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897
+## explicit
 # golang.org/x/net v0.0.0-20201031054903-ff519b6c9102
 ## explicit
 golang.org/x/net/context
