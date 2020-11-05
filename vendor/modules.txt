@@ -25,7 +25,7 @@ github.com/rkt/rkt/pkg/lock
 # golang.org/x/net v0.0.0-20201031054903-ff519b6c9102
 ## explicit
 golang.org/x/net/context
-# golang.org/x/text v0.3.4
+# golang.org/x/tools v0.0.0-20201105173854-bc9fc8d8c4bc
 ## explicit
 # github.com/coreos/etcd => ./etcd
 # github.com/coreos/etcd/client => ./etcd/client
