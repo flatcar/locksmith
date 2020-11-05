@@ -22,7 +22,7 @@ github.com/hashicorp/errwrap
 # github.com/rkt/rkt v1.30.0
 ## explicit
 github.com/rkt/rkt/pkg/lock
-# golang.org/x/net v0.0.0-20160201052856-d513e58596cd
+# golang.org/x/net v0.0.0-20201031054903-ff519b6c9102
 ## explicit
 golang.org/x/net/context
 # github.com/coreos/etcd => ./etcd
