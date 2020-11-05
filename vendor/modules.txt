@@ -10,7 +10,7 @@ github.com/coreos/etcd/client
 ## explicit
 github.com/coreos/go-systemd/journal
 github.com/coreos/go-systemd/login1
-# github.com/coreos/pkg v0.0.0-20160210003529-549bd7890e35
+# github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f
 ## explicit
 github.com/coreos/pkg/capnslog
 # github.com/godbus/dbus v0.0.0-20141007185835-25a4b8ca48c6
