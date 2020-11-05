@@ -13,6 +13,6 @@ require (
 	github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f
 	github.com/godbus/dbus v0.0.0-20141007185835-25a4b8ca48c6
 	github.com/hashicorp/errwrap v1.1.0 // indirect
-	github.com/rkt/rkt v1.27.0
+	github.com/rkt/rkt v1.30.0
 	golang.org/x/net v0.0.0-20160201052856-d513e58596cd
 )
