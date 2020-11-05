@@ -1,4 +1,4 @@
-# github.com/coreos/etcd v2.2.5+incompatible => ./etcd
+# github.com/coreos/etcd v3.3.25+incompatible => ./etcd
 ## explicit
 github.com/coreos/etcd/Godeps/_workspace/src/github.com/ugorji/go/codec
 github.com/coreos/etcd/pkg/pathutil
