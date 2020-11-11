@@ -186,4 +186,4 @@ Please use the [Flatcar issue tracker][bugs] to report all bugs, issues, and fea
 
 [semaphore]: http://en.wikipedia.org/wiki/Semaphore_(programming)
 [cas]: https://etcd.io/docs/v3.3.12/learning/api/#transaction
-[bugs]: https://github.com/flatcar-linux/flatcar/issues/new
+[bugs]: https://github.com/kinvolk/flatcar/issues/new
