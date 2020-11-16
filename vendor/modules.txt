@@ -1,4 +1,4 @@
-# github.com/coreos/etcd v2.2.5+incompatible => ./etcd
+# github.com/coreos/etcd v3.3.25+incompatible => ./etcd
 ## explicit
 github.com/coreos/etcd/Godeps/_workspace/src/github.com/ugorji/go/codec
 github.com/coreos/etcd/pkg/pathutil
@@ -10,20 +10,22 @@ github.com/coreos/etcd/client
 ## explicit
 github.com/coreos/go-systemd/journal
 github.com/coreos/go-systemd/login1
-# github.com/coreos/pkg v0.0.0-20160210003529-549bd7890e35
+# github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f
 ## explicit
 github.com/coreos/pkg/capnslog
 # github.com/godbus/dbus v0.0.0-20141007185835-25a4b8ca48c6
 ## explicit
 github.com/godbus/dbus
-# github.com/hashicorp/errwrap v1.0.0
+# github.com/hashicorp/errwrap v1.1.0
 ## explicit
 github.com/hashicorp/errwrap
-# github.com/rkt/rkt v1.27.0
+# github.com/rkt/rkt v1.30.0
 ## explicit
 github.com/rkt/rkt/pkg/lock
-# golang.org/x/net v0.0.0-20160201052856-d513e58596cd
+# golang.org/x/net v0.0.0-20201031054903-ff519b6c9102
 ## explicit
 golang.org/x/net/context
+# golang.org/x/tools v0.0.0-20201105173854-bc9fc8d8c4bc
+## explicit
 # github.com/coreos/etcd => ./etcd
 # github.com/coreos/etcd/client => ./etcd/client
