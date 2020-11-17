@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/godbus/dbus"
+	dbus "github.com/godbus/dbus/v5"
 )
 
 func makeSig(curOp string) *dbus.Signal {
