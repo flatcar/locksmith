@@ -18,7 +18,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/godbus/dbus"
+	dbus "github.com/godbus/dbus/v5"
 )
 
 // Status is a struct containing the information passed by updateengine on every

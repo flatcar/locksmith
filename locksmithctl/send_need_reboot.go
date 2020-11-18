@@ -20,7 +20,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/godbus/dbus"
+	dbus "github.com/godbus/dbus/v5"
 )
 
 var (

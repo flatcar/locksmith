@@ -19,7 +19,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/godbus/dbus"
+	dbus "github.com/godbus/dbus/v5"
 )
 
 const (
@@ -36,7 +36,7 @@ const (
 // Client is a dbus client subscribed to updateengine status updates
 type Client struct {
 	conn   *dbus.Conn
-	object *dbus.Object
+	object dbus.BusObject
 	ch     chan *dbus.Signal
 }
 
