@@ -16,7 +16,7 @@ contribution. See the [DCO](DCO) file for details.
 
 The project currently uses the general Flatcar email list and IRC channel:
 - Email: [flatcar-user](https://groups.google.com/g/flatcar-linux-user)
-- IRC: #[flatcar](irc://irc.freenode.org:6667/#flatcar) IRC channel on freenode.org
+- IRC: #[flatcar](ircs://irc.libera.chat:6697/#flatcar) IRC channel on libera.chat
 
 Please avoid emailing maintainers found in the MAINTAINERS file directly. They
 are very busy and read the mailing lists.
