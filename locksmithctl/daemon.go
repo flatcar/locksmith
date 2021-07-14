@@ -135,8 +135,11 @@ func (r rebooter) rebootAndSleep() {
 }
 
 // lockAndReboot attempts to acquire the lock and reboot the machine in an
-// infinite loop. Returns if the reboot failed.
+// infinite loop if it is in the reboot window.
+// Returns if the reboot failed.
 func (r rebooter) lockAndReboot(lck *lock.Lock) {
+	var period *timeutil.Periodic
+
 	interval := initialInterval
 	for {
 		err := lck.Lock()
@@ -146,6 +149,46 @@ func (r rebooter) lockAndReboot(lck *lock.Lock) {
 			time.Sleep(interval)
 
 			continue
+		}
+
+		startw := os.Getenv("LOCKSMITHD_REBOOT_WINDOW_START")
+		if startw == "" {
+			startw = os.Getenv("REBOOT_WINDOW_START")
+		}
+
+		lengthw := os.Getenv("LOCKSMITHD_REBOOT_WINDOW_LENGTH")
+		if lengthw == "" {
+			lengthw = os.Getenv("REBOOT_WINDOW_LENGTH")
+		}
+
+		if (startw == "") != (lengthw == "") {
+			dlog.Fatal("Either both or neither $REBOOT_WINDOW_START and $REBOOT_WINDOW_LENGTH must be set")
+		}
+
+		if startw != "" && lengthw != "" {
+			p, err := timeutil.ParsePeriodic(startw, lengthw)
+			if err != nil {
+				dlog.Fatalf("Error parsing reboot window: %s", err)
+			}
+
+			period = p
+		}
+
+		if period != nil {
+			dlog.Infof("Reboot window start is %q and length is %q", startw, lengthw)
+			next := period.Next(time.Now())
+			dlog.Infof("Next window begins at %s and ends at %s", next.Start, next.End)
+		} else {
+			dlog.Info("No configured reboot window")
+		}
+
+		if period != nil {
+			now := time.Now()
+			sleeptime := period.DurationToStart(now)
+			if sleeptime > 0 {
+				dlog.Infof("Waiting for %s to reboot.", sleeptime)
+				time.Sleep(sleeptime)
+			}
 		}
 
 		r.rebootAndSleep()
