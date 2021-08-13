@@ -17,23 +17,18 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"net"
-	"net/http"
 	"os"
 	"path"
 	"strings"
-	"syscall"
 	"text/tabwriter"
-	"time"
 
 	"github.com/flatcar-linux/locksmith/lock"
 	"github.com/flatcar-linux/locksmith/version"
 
-	"go.etcd.io/etcd/client"
+	client "go.etcd.io/etcd/client/v3"
 )
 
 const (
@@ -184,15 +179,10 @@ func main() {
 // getLockClient returns an initialized EtcdLockClient, using an etcd
 // client configured from the global etcd flags
 func getClient() (*lock.EtcdLockClient, error) {
-	// copy of github.com/coreos/etcd/client.DefaultTransport so that
-	// TLSClientConfig can be overridden.
-	transport := &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
-		Dial: (&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 30 * time.Second,
-		}).Dial,
-		TLSHandshakeTimeout: 10 * time.Second,
+	cfg := client.Config{
+		Endpoints: globalFlags.Endpoints,
+		Username:  globalFlags.EtcdUsername,
+		Password:  globalFlags.EtcdPassword,
 	}
 
 	if globalFlags.EtcdCAFile != "" || globalFlags.EtcdCertFile != "" || globalFlags.EtcdKeyFile != "" {
@@ -216,42 +206,22 @@ func getClient() (*lock.EtcdLockClient, error) {
 
 		tlsconf.BuildNameToCertificate()
 
-		transport.TLSClientConfig = tlsconf
+		cfg.TLS = tlsconf
 	}
 
-	// This loop is a hack to bring a kind a resilience in case of unreachable endpoint.
-	// It has been shown in the CI (cl.locksmith.cluster) that etcd/v2 recent upgrade has broke the resiliency
-	// of the endpoint.
-	// It can be safely removed once the `etcd` V3 upgrade done.
-	// More details https://github.com/kinvolk/coreos-overlay/pull/1161#issuecomment-891906580.
-	for _, ep := range globalFlags.Endpoints {
-		cfg := client.Config{
-			Endpoints: []string{ep},
-			Transport: transport,
-			Username:  globalFlags.EtcdUsername,
-			Password:  globalFlags.EtcdPassword,
-		}
-
-		ec, err := client.New(cfg)
-		if err != nil {
-			return nil, fmt.Errorf("creating etcd client: %w", err)
-		}
-
-		kapi := client.NewKeysAPI(ec)
-
-		lc, err := lock.NewEtcdLockClient(kapi, globalFlags.Group)
-		if err != nil {
-			if errors.Is(err, syscall.ECONNREFUSED) {
-				continue
-			}
-
-			return nil, fmt.Errorf("creating etcd lock client: %w", err)
-		}
-
-		return lc, nil
+	ec, err := client.New(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("creating etcd client: %w", err)
 	}
 
-	return nil, fmt.Errorf("no etcd endpoints available, tried: %s", strings.Join(globalFlags.Endpoints, ","))
+	kapi := client.NewKV(ec)
+
+	lc, err := lock.NewEtcdLockClient(kapi, globalFlags.Group)
+	if err != nil {
+		return nil, fmt.Errorf("creating etcd lock client: %w", err)
+	}
+
+	return lc, nil
 }
 
 // flagsFromEnv parses all registered flags in the given flagSet,
