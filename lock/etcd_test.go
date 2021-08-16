@@ -16,132 +16,226 @@ package lock
 
 import (
 	"errors"
-	"reflect"
 	"testing"
 
-	"go.etcd.io/etcd/client"
+	pb "go.etcd.io/etcd/api/v3/mvccpb"
+	client "go.etcd.io/etcd/client/v3"
+
 	"golang.org/x/net/context"
 )
 
+const testGroup = ""
+
+// testEtcdClient is the struct used to mock the `etcd`
+// client
 type testEtcdClient struct {
-	err  error
-	resp *client.Response
+	err     error
+	getResp *client.GetResponse
+	txn     testTxn
 }
 
-func (t *testEtcdClient) Get(ctx context.Context, key string, opts *client.GetOptions) (*client.Response, error) {
-	return t.resp, t.err
+// testTxn implements the client.Txn interface
+type testTxn struct {
+	err        error
+	txnSuccess bool
 }
 
-func (t *testEtcdClient) Set(ctx context.Context, key, value string, opts *client.SetOptions) (*client.Response, error) {
-	return t.resp, t.err
+func (t testTxn) If(cs ...client.Cmp) client.Txn {
+	return t
 }
 
-func (t *testEtcdClient) Create(ctx context.Context, key, value string) (*client.Response, error) {
-	return t.resp, t.err
+func (t testTxn) Then(ops ...client.Op) client.Txn {
+	return t
+}
+
+func (t testTxn) Else(ops ...client.Op) client.Txn {
+	return t
+}
+
+func (t testTxn) Commit() (*client.TxnResponse, error) {
+	return &client.TxnResponse{Succeeded: t.txnSuccess}, t.err
+}
+
+func (t *testEtcdClient) Get(ctx context.Context, key string, opts ...client.OpOption) (*client.GetResponse, error) {
+	return t.getResp, t.err
+}
+
+func (t *testEtcdClient) Txn(ctx context.Context) client.Txn {
+	return t.txn
 }
 
 func TestEtcdLockClientInit(t *testing.T) {
-	for i, tt := range []struct {
-		ee      error
-		want    bool
-		group   string
-		keypath string
-	}{
-		{nil, false, "", SemaphorePrefix},
-		{client.Error{Code: client.ErrorCodeNodeExist}, false, "", SemaphorePrefix},
-		{client.Error{Code: client.ErrorCodeKeyNotFound}, true, "", SemaphorePrefix},
-		{errors.New("some random error"), true, "", SemaphorePrefix},
-		{client.Error{Code: client.ErrorCodeKeyNotFound}, true, "database", "coreos.com/updateengine/rebootlock/groups/database/semaphore"},
-		{nil, false, "prod/database", "coreos.com/updateengine/rebootlock/groups/prod%2Fdatabase/semaphore"},
-	} {
-		elc, got := NewEtcdLockClient(&testEtcdClient{err: tt.ee}, tt.group)
-		if (got != nil) != tt.want {
-			t.Errorf("case %d: unexpected error state initializing Client: got %v", i, got)
-			continue
-		}
-
-		if got != nil {
-			continue
-		}
-
-		if elc.keypath != tt.keypath {
-			t.Errorf("case %d: unexpected etcd key path: got %v want %v", i, elc.keypath, tt.keypath)
-		}
-	}
-}
-
-func makeResponse(idx int, val string) *client.Response {
-	return &client.Response{
-		Node: &client.Node{
-			Value:         val,
-			ModifiedIndex: uint64(idx),
+	t.Run("Success", func(t *testing.T) {
+		elc, err := NewEtcdLockClient(&testEtcdClient{
+			err:     nil,
+			getResp: &client.GetResponse{},
 		},
-	}
+			testGroup,
+		)
+		if err != nil {
+			t.Fatalf("error should be nil, got: %v", err)
+		}
+
+		if elc == nil {
+			t.Fatalf("etcd lock client should not be nil")
+		}
+	})
+	t.Run("Error", func(t *testing.T) {
+		_, err := NewEtcdLockClient(&testEtcdClient{
+			txn:     testTxn{err: errors.New("connection refused")},
+			getResp: &client.GetResponse{Count: 0},
+		},
+			testGroup,
+		)
+		if err == nil {
+			t.Fatal("error should not be nil")
+		}
+
+		if err.Error() != "unable to init etcd lock client: unable to commit initial transaction: connection refused" {
+			t.Fatalf("error should be 'unable to init etcd lock client: unable to commit initial transaction: connection refused', got: %v", err)
+		}
+	})
 }
 
 func TestEtcdLockClientGet(t *testing.T) {
-	for i, tt := range []struct {
-		ee error
-		er *client.Response
-		ws *Semaphore
-		we bool
-	}{
-		// errors returned from etcd
-		{errors.New("some error"), nil, nil, true},
-		{client.Error{Code: client.ErrorCodeKeyNotFound}, nil, nil, true},
-		// bad JSON should cause errors
-		{nil, makeResponse(0, "asdf"), nil, true},
-		{nil, makeResponse(0, `{"semaphore:`), nil, true},
-		// successful calls
-		{nil, makeResponse(10, `{"semaphore": 1}`), &Semaphore{Index: 10, Semaphore: 1}, false},
-		{nil, makeResponse(1024, `{"semaphore": 1, "max": 2, "holders": ["foo", "bar"]}`), &Semaphore{Index: 1024, Semaphore: 1, Max: 2, Holders: []string{"foo", "bar"}}, false},
-		// index should be set from etcd, not json!
-		{nil, makeResponse(1234, `{"semaphore": 89, "index": 4567}`), &Semaphore{Index: 1234, Semaphore: 89}, false},
-	} {
-		elc := &EtcdLockClient{
-			keyapi: &testEtcdClient{
-				err:  tt.ee,
-				resp: tt.er,
+	t.Run("Success", func(t *testing.T) {
+		elc, err := NewEtcdLockClient(&testEtcdClient{
+			err: nil,
+			getResp: &client.GetResponse{
+				Count: 1,
+				Kvs: []*pb.KeyValue{
+					&pb.KeyValue{
+						Key: []byte(SemaphorePrefix),
+						// index should be set from etcd, not json (backported from legacy test)
+						Value:   []byte(`{"index": 12, "semaphore": 1, "max": 2, "holders": ["foo", "bar"]}`),
+						Version: 1234,
+					},
+				},
 			},
+		},
+			testGroup,
+		)
+		if err != nil {
+			t.Fatalf("error should be nil, got: %v", err)
 		}
-		gs, ge := elc.Get()
-		if tt.we {
-			if ge == nil {
-				t.Fatalf("case %d: expected error but got nil!", i)
-			}
-		} else {
-			if ge != nil {
-				t.Fatalf("case %d: unexpected error: %v", i, ge)
-			}
+
+		res, err := elc.Get()
+		if err != nil {
+			t.Fatalf("error should be nil, got: %v", err)
 		}
-		if !reflect.DeepEqual(gs, tt.ws) {
-			t.Fatalf("case %d: bad semaphore: got %#v, want %#v", i, gs, tt.ws)
+
+		if res.Index != uint64(1234) {
+			t.Fatalf("index should be 1234, got: %d", res.Index)
 		}
-	}
+	})
+	t.Run("SuccessNotFound", func(t *testing.T) {
+		elc, err := NewEtcdLockClient(&testEtcdClient{
+			err:     nil,
+			getResp: &client.GetResponse{Count: 0},
+		},
+			testGroup,
+		)
+		if err != nil {
+			t.Fatalf("error should be nil, got: %v", err)
+		}
+
+		_, err = elc.Get()
+		if err == nil {
+			t.Fatal("error should not be nil")
+		}
+
+		if !errors.Is(err, ErrNotFound) {
+			t.Fatalf("error should be ErrNotFound, got: %v", err)
+		}
+	})
+	t.Run("ErrorWithMalformedJSON", func(t *testing.T) {
+		elc, err := NewEtcdLockClient(&testEtcdClient{
+			err: nil,
+			getResp: &client.GetResponse{
+				Count: 1,
+				Kvs: []*pb.KeyValue{
+					&pb.KeyValue{
+						Key: []byte(SemaphorePrefix),
+						// notice the missing `,` in the array
+						Value: []byte(`{"semaphore": 1, "max": 2, "holders": ["foo" "bar"]}`),
+					},
+				},
+			},
+		},
+			testGroup,
+		)
+		if err != nil {
+			t.Fatalf("error should be nil, got: %v", err)
+		}
+
+		_, err = elc.Get()
+		if err == nil {
+			t.Fatal("error should not be nil")
+		}
+
+		if err.Error() != "invalid character '\"' after array element" {
+			t.Fatalf("error should mention invalid character, got: %v", err)
+		}
+	})
 }
 
 func TestEtcdLockClientSet(t *testing.T) {
-	for i, tt := range []struct {
-		sem  *Semaphore
-		ee   error // error returned from etcd
-		want bool  // do we expect Set to return an error
-	}{
-		// nil semaphore cannot be set
-		{nil, nil, true},
-		// empty semaphore is OK
-		{&Semaphore{}, nil, false},
-		{&Semaphore{Index: uint64(1234)}, nil, false},
-		// all errors returned from etcd should propagate
-		{&Semaphore{}, client.Error{Code: client.ErrorCodeNodeExist}, true},
-		{&Semaphore{}, client.Error{Code: client.ErrorCodeKeyNotFound}, true},
-		{&Semaphore{}, errors.New("some random error"), true},
-	} {
-		elc := &EtcdLockClient{
-			keyapi: &testEtcdClient{err: tt.ee},
+	t.Run("Success", func(t *testing.T) {
+		elc, err := NewEtcdLockClient(&testEtcdClient{
+			err:     nil,
+			getResp: &client.GetResponse{Count: 0},
+			txn:     testTxn{txnSuccess: true},
+		},
+			testGroup,
+		)
+		if err != nil {
+			t.Fatalf("error should be nil, got: %v", err)
 		}
-		got := elc.Set(tt.sem)
-		if (got != nil) != tt.want {
-			t.Errorf("case %d: unexpected error state calling Set: got %v", i, got)
+
+		err = elc.Set(&Semaphore{})
+		if err != nil {
+			t.Fatalf("error should be nil, got: %v", err)
 		}
-	}
+
+	})
+	t.Run("ErrorNilSemaphore", func(t *testing.T) {
+		elc, err := NewEtcdLockClient(&testEtcdClient{
+			err:     nil,
+			getResp: &client.GetResponse{Count: 0},
+		},
+			testGroup,
+		)
+		if err != nil {
+			t.Fatalf("error should be nil, got: %v", err)
+		}
+
+		err = elc.Set(nil)
+		if err == nil {
+			t.Fatal("error should not be nil")
+		}
+
+		if err.Error() != "cannot set nil semaphore" {
+			t.Fatalf("error should 'cannot set nil semaphore', got: %v", err)
+		}
+	})
+	t.Run("ErrorTransaction", func(t *testing.T) {
+		elc, err := NewEtcdLockClient(&testEtcdClient{
+			err:     nil,
+			getResp: &client.GetResponse{Count: 0},
+		},
+			testGroup,
+		)
+		if err != nil {
+			t.Fatalf("error should be nil, got: %v", err)
+		}
+
+		err = elc.Set(&Semaphore{})
+		if err == nil {
+			t.Fatal("error should not be nil")
+		}
+
+		if err.Error() != "failed to set the semaphore - it got updated in the meantime" {
+			t.Fatalf("error should be 'failed to set the semaphore - it got updated in the meantime', got: %v", err)
+		}
+	})
 }
