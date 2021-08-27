@@ -76,6 +76,7 @@ func (e *endpoints) String() string {
 }
 
 func (e *endpoints) Set(value string) error {
+	*e = []string{}
 	for _, url := range strings.Split(value, ",") {
 		*e = append(*e, strings.TrimSpace(url))
 	}
