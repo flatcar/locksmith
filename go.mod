@@ -6,15 +6,14 @@ require (
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf
 	github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f
+	github.com/flatcar-linux/fleetlock v0.0.0-20210922150917-05e572675abd
 	github.com/godbus/dbus v4.1.0+incompatible // indirect
-	github.com/godbus/dbus/v5 v5.0.3
-	github.com/gogo/protobuf v1.3.1 // indirect
+	github.com/godbus/dbus/v5 v5.0.4
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/rkt/rkt v1.30.0
 	go.etcd.io/etcd v0.0.0-00010101000000-000000000000
-	go.uber.org/zap v1.16.0 // indirect
-	golang.org/x/net v0.0.0-20201031054903-ff519b6c9102
-	google.golang.org/grpc v1.33.2 // indirect
+	go.uber.org/tools v0.0.0-20190618225709-2cfd321de3ee // indirect
+	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4
 )
 
 replace (

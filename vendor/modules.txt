@@ -8,18 +8,19 @@ github.com/coreos/go-systemd/login1
 # github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f
 ## explicit
 github.com/coreos/pkg/capnslog
+# github.com/flatcar-linux/fleetlock v0.0.0-20210922150917-05e572675abd
+## explicit
+github.com/flatcar-linux/fleetlock/pkg/client
 # github.com/godbus/dbus v4.1.0+incompatible
 ## explicit
 github.com/godbus/dbus
-# github.com/godbus/dbus/v5 v5.0.3
+# github.com/godbus/dbus/v5 v5.0.4
 ## explicit
 github.com/godbus/dbus/v5
-# github.com/gogo/protobuf v1.3.1
-## explicit
 # github.com/hashicorp/errwrap v1.1.0
 ## explicit
 github.com/hashicorp/errwrap
-# github.com/json-iterator/go v1.1.7
+# github.com/json-iterator/go v1.1.11
 github.com/json-iterator/go
 # github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
 github.com/modern-go/concurrent
@@ -35,12 +36,10 @@ go.etcd.io/etcd/pkg/pathutil
 go.etcd.io/etcd/pkg/srv
 go.etcd.io/etcd/pkg/types
 go.etcd.io/etcd/version
-# go.uber.org/zap v1.16.0
+# go.uber.org/tools v0.0.0-20190618225709-2cfd321de3ee
 ## explicit
-# golang.org/x/net v0.0.0-20201031054903-ff519b6c9102
+# golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4
 ## explicit
 golang.org/x/net/context
-# google.golang.org/grpc v1.33.2 => google.golang.org/grpc v1.29.1
-## explicit
 # go.etcd.io/etcd => go.etcd.io/etcd v0.5.0-alpha.5.0.20200824191128-ae9734ed278b
 # google.golang.org/grpc => google.golang.org/grpc v1.29.1
