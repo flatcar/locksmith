@@ -14,9 +14,13 @@
 
 package lock
 
+import (
+	"github.com/flatcar-linux/fleetlock/pkg/client"
+)
+
 // LockClient is a generic interface for a lock
 type LockClient interface {
-	Init() error
-	Get() (*Semaphore, error)
-	Set(*Semaphore) error
+	client.New() (*Client, error)
+	client.RecursiveLock() error
+	client.UnlockIfHeld() error
 }
