@@ -76,16 +76,12 @@ func (l *Lock) SetMax(max int) (sem *Semaphore, oldMax int, err error) {
 // semaphore, or if the maximum number of holders has been reached, or if a lock
 // with this id is already a holder
 func (l *Lock) Lock() (err error) {
-	return l.store(func(sem *Semaphore) error {
-		return sem.Lock(l.id)
-	})
+	return l.client.RecursiveLock()
 }
 
 // Unlock removes this lock id as a holder of the semaphore
 // it returns an error if there is a problem getting or setting the semaphore,
 // or if this lock is not locked.
 func (l *Lock) Unlock() error {
-	return l.store(func(sem *Semaphore) error {
-		return sem.Unlock(l.id)
-	})
+	return l.client.UnlockIfHeld()
 }
