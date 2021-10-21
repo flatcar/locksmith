@@ -101,8 +101,6 @@ func init() {
 		cmdLock,
 		cmdReboot,
 		cmdSendNeedReboot,
-		cmdSetMax,
-		cmdStatus,
 		cmdUnlock,
 	}
 }
