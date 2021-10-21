@@ -28,8 +28,8 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/flatcar-linux/locksmith/lock"
 	"github.com/flatcar-linux/locksmith/version"
+	"github.com/flatcar-linux/fleetlock/pkg/client"
 
 	"go.etcd.io/etcd/client"
 )
@@ -181,7 +181,7 @@ func main() {
 
 // getLockClient returns an initialized EtcdLockClient, using an etcd
 // client configured from the global etcd flags
-func getClient() (*lock.EtcdLockClient, error) {
+func getClient() (*client.Client, error) {
 	// copy of github.com/coreos/etcd/client.DefaultTransport so that
 	// TLSClientConfig can be overridden.
 	transport := &http.Transport{
