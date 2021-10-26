@@ -225,8 +225,6 @@ func getClient() (*client.Client, error) {
 		return nil, err
 	}
 
-	kapi := client.NewKeysAPI(ec)
-
 	lc, err := lock.NewEtcdLockClient(kapi, globalFlags.Group)
 	if err != nil {
 		return nil, err
