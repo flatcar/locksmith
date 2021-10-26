@@ -20,13 +20,11 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"os"
 	"path"
 	"strings"
 	"text/tabwriter"
-	"time"
 
 	"github.com/flatcar-linux/locksmith/version"
 	"github.com/flatcar-linux/fleetlock/pkg/client"
@@ -180,15 +178,7 @@ func main() {
 func getClient() (*client.Client, error) {
 	// copy of github.com/coreos/etcd/client.DefaultTransport so that
 	// TLSClientConfig can be overridden.
-	transport := &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
-		Dial: (&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 30 * time.Second,
-		}).Dial,
-		TLSHandshakeTimeout: 10 * time.Second,
-	}
-
+	transport := http.DefaultClient
 	if globalFlags.EtcdCAFile != "" || globalFlags.EtcdCertFile != "" || globalFlags.EtcdKeyFile != "" {
 		cert, err := tls.LoadX509KeyPair(globalFlags.EtcdCertFile, globalFlags.EtcdKeyFile)
 		if err != nil {
