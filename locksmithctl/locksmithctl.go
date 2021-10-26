@@ -30,8 +30,6 @@ import (
 
 	"github.com/flatcar-linux/locksmith/version"
 	"github.com/flatcar-linux/fleetlock/pkg/client"
-
-	"go.etcd.io/etcd/client"
 )
 
 const (
