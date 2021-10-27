@@ -26,8 +26,8 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/flatcar-linux/locksmith/version"
 	"github.com/flatcar-linux/fleetlock/pkg/client"
+	"github.com/flatcar-linux/locksmith/version"
 )
 
 const (
@@ -50,6 +50,7 @@ var (
 		EtcdUsername string
 		EtcdPassword string
 		Group        string
+		ID           string
 		Version      bool
 	}{}
 
@@ -90,6 +91,7 @@ func init() {
 	globalFlagSet.StringVar(&globalFlags.EtcdUsername, "etcd-username", "", "username for secure etcd communication")
 	globalFlagSet.StringVar(&globalFlags.EtcdPassword, "etcd-password", "", "password for secure etcd communication")
 	globalFlagSet.StringVar(&globalFlags.Group, "group", "", "locksmith group")
+	globalFlagSet.StringVar(&globalFlags.ID, "id", "", "locksmith id")
 	globalFlagSet.BoolVar(&globalFlags.Version, "version", false, "Print the version and exit.")
 
 	commands = []*Command{
@@ -173,8 +175,8 @@ func main() {
 	os.Exit(cmd.Run(cmd.Flags.Args()))
 }
 
-// getLockClient returns an initialized EtcdLockClient, using an etcd
-// client configured from the global etcd flags
+// getLockClient returns an initialized fleetlockClient,
+// using the global flags and http client
 func getClient() (*client.Client, error) {
 	// copy of github.com/coreos/etcd/client.DefaultTransport so that
 	// TLSClientConfig can be overridden.
@@ -203,23 +205,18 @@ func getClient() (*client.Client, error) {
 		transport.TLSClientConfig = tlsconf
 	}
 
-	cfg := client.Config{
-		Endpoints: globalFlags.Endpoints,
-		Transport: transport,
-		Username:  globalFlags.EtcdUsername,
-		Password:  globalFlags.EtcdPassword,
+	for _, ep := range globalFlags.Endpoints {
+		cfg := client.Client{
+			URL:   ep,
+		}
+		flc, err := client.New(cfg.URL, globalFlags.Group, globalFlags.ID, transport)
+		if err != nil {
+			return nil, err
+		}
+		return flc, nil
 	}
 
-	ec, err := client.New(cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	lc, err := lock.NewEtcdLockClient(kapi, globalFlags.Group)
-	if err != nil {
-		return nil, err
-	}
-	return lc, err
+	return nil, fmt.Errorf("no url available, tried: %s", strings.Join(globalFlags.Endpoints, ","))
 }
 
 // flagsFromEnv parses all registered flags in the given flagSet,
