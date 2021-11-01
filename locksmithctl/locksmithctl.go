@@ -20,11 +20,13 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"os"
 	"path"
 	"strings"
 	"text/tabwriter"
+	"time"
 
 	"github.com/flatcar-linux/fleetlock/pkg/client"
 	"github.com/flatcar-linux/locksmith/version"
@@ -202,12 +204,22 @@ func getClient() (*client.Client, error) {
 
 		tlsconf.BuildNameToCertificate()
 
-		transport.TLSClientConfig = tlsconf
+		custom_transport := &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			Dial: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).Dial,
+			TLSHandshakeTimeout: 10 * time.Second,
+		}
+
+		custom_transport.TLSClientConfig = tlsconf
+		transport.Transport = custom_transport
 	}
 
 	for _, ep := range globalFlags.Endpoints {
 		cfg := client.Client{
-			URL:   ep,
+			URL: ep,
 		}
 		flc, err := client.New(cfg.URL, globalFlags.Group, globalFlags.ID, transport)
 		if err != nil {
