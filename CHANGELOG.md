@@ -1,3 +1,28 @@
+# Changelog
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [unreleased]
+### Security
+### Added
+### Changed
+### Removed
+
+## [v0.7.0](https://github.com/flatcar-linux/locksmith/releases/tag/v0.7.0)- 30/11/2021
+
+### Security
+- Update Go dependencies to latest versions ([#6](https://github.com/flatcar-linux/locksmith/pull/6), [#8](https://github.com/flatcar-linux/locksmith/pull/8))
+
+### Changed
+- Use Go modules to handle dependencies ([#4](https://github.com/flatcar-linux/locksmith/pull/4))
+- Use `github.com/flatcar-linux/locksmith` as Go module name ([#2](https://github.com/flatcar-linux/locksmith/pull/2))
+- Node will not reboot outside of reboot window in case lock is acquired outside of it ([#10](https://github.com/flatcar-linux/locksmith/pull/10))
+
+### Fixed
+- Possible panic on shutdown ([#1](https://github.com/flatcar-linux/locksmith/pull/1))
+
+
 ### v0.6.2
 
 Locksmith now internally handles DBus signals in a safer way, with additional
