@@ -16,7 +16,6 @@ package lock
 
 // LockClient is a generic interface for a lock
 type LockClient interface {
-	Init() error
-	Get() (*Semaphore, error)
-	Set(*Semaphore) error
+	RecursiveLock() error
+	UnlockIfHeld() error
 }

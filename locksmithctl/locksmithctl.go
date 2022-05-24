@@ -17,7 +17,6 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -26,14 +25,11 @@ import (
 	"os"
 	"path"
 	"strings"
-	"syscall"
 	"text/tabwriter"
 	"time"
 
-	"github.com/flatcar-linux/locksmith/lock"
+	"github.com/flatcar-linux/fleetlock/pkg/client"
 	"github.com/flatcar-linux/locksmith/version"
-
-	"go.etcd.io/etcd/client"
 )
 
 const (
@@ -56,6 +52,7 @@ var (
 		EtcdUsername string
 		EtcdPassword string
 		Group        string
+		ID           string
 		Version      bool
 	}{}
 
@@ -96,6 +93,7 @@ func init() {
 	globalFlagSet.StringVar(&globalFlags.EtcdUsername, "etcd-username", "", "username for secure etcd communication")
 	globalFlagSet.StringVar(&globalFlags.EtcdPassword, "etcd-password", "", "password for secure etcd communication")
 	globalFlagSet.StringVar(&globalFlags.Group, "group", "", "locksmith group")
+	globalFlagSet.StringVar(&globalFlags.ID, "id", "", "locksmith id")
 	globalFlagSet.BoolVar(&globalFlags.Version, "version", false, "Print the version and exit.")
 
 	commands = []*Command{
@@ -103,8 +101,6 @@ func init() {
 		cmdLock,
 		cmdReboot,
 		cmdSendNeedReboot,
-		cmdSetMax,
-		cmdStatus,
 		cmdUnlock,
 	}
 }
@@ -181,20 +177,12 @@ func main() {
 	os.Exit(cmd.Run(cmd.Flags.Args()))
 }
 
-// getLockClient returns an initialized EtcdLockClient, using an etcd
-// client configured from the global etcd flags
-func getClient() (*lock.EtcdLockClient, error) {
+// getLockClient returns an initialized fleetlockClient,
+// using the global flags and http client
+func getClient() (*client.Client, error) {
 	// copy of github.com/coreos/etcd/client.DefaultTransport so that
 	// TLSClientConfig can be overridden.
-	transport := &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
-		Dial: (&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 30 * time.Second,
-		}).Dial,
-		TLSHandshakeTimeout: 10 * time.Second,
-	}
-
+	transport := http.DefaultClient
 	if globalFlags.EtcdCAFile != "" || globalFlags.EtcdCertFile != "" || globalFlags.EtcdKeyFile != "" {
 		cert, err := tls.LoadX509KeyPair(globalFlags.EtcdCertFile, globalFlags.EtcdKeyFile)
 		if err != nil {
@@ -216,42 +204,31 @@ func getClient() (*lock.EtcdLockClient, error) {
 
 		tlsconf.BuildNameToCertificate()
 
-		transport.TLSClientConfig = tlsconf
+		custom_transport := &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			Dial: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).Dial,
+			TLSHandshakeTimeout: 10 * time.Second,
+		}
+
+		custom_transport.TLSClientConfig = tlsconf
+		transport.Transport = custom_transport
 	}
 
-	// This loop is a hack to bring a kind a resilience in case of unreachable endpoint.
-	// It has been shown in the CI (cl.locksmith.cluster) that etcd/v2 recent upgrade has broke the resiliency
-	// of the endpoint.
-	// It can be safely removed once the `etcd` V3 upgrade done.
-	// More details https://github.com/kinvolk/coreos-overlay/pull/1161#issuecomment-891906580.
 	for _, ep := range globalFlags.Endpoints {
-		cfg := client.Config{
-			Endpoints: []string{ep},
-			Transport: transport,
-			Username:  globalFlags.EtcdUsername,
-			Password:  globalFlags.EtcdPassword,
+		cfg := client.Client{
+			URL: ep,
 		}
-
-		ec, err := client.New(cfg)
+		flc, err := client.New(cfg.URL, globalFlags.Group, globalFlags.ID, transport)
 		if err != nil {
-			return nil, fmt.Errorf("creating etcd client: %w", err)
+			return nil, err
 		}
-
-		kapi := client.NewKeysAPI(ec)
-
-		lc, err := lock.NewEtcdLockClient(kapi, globalFlags.Group)
-		if err != nil {
-			if errors.Is(err, syscall.ECONNREFUSED) {
-				continue
-			}
-
-			return nil, fmt.Errorf("creating etcd lock client: %w", err)
-		}
-
-		return lc, nil
+		return flc, nil
 	}
 
-	return nil, fmt.Errorf("no etcd endpoints available, tried: %s", strings.Join(globalFlags.Endpoints, ","))
+	return nil, fmt.Errorf("no url available, tried: %s", strings.Join(globalFlags.Endpoints, ","))
 }
 
 // flagsFromEnv parses all registered flags in the given flagSet,
