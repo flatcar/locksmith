@@ -14,11 +14,24 @@
 
 package lock
 
+import (
+	"errors"
+)
+
 // Lock takes care of locking in generic clients
 type Lock struct {
 	id     string
 	client LockClient
 }
+
+var (
+	// ErrExist is the error returned if a holder with the specified id
+	// is already holding the semaphore
+	ErrExist = errors.New("holder exists")
+	// ErrNotExist is the error returned if there is no holder with the
+	// specified id holding the semaphore
+	ErrNotExist = errors.New("holder does not exist")
+)
 
 // New returns a new lock with the provided arguments
 func New(id string, client LockClient) (lock *Lock) {
