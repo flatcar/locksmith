@@ -23,7 +23,7 @@ These strategies can be configured via `/etc/flatcar/update.conf` with a line th
 REBOOT_STRATEGY=reboot
 ```
 
-The reboot strategy can also be configured through a [Container Linux Config](https://github.com/flatcar-linux/container-linux-config-transpiler/blob/master/doc/getting-started.md).
+The reboot strategy can also be configured through a [Container Linux Config](https://github.com/flatcar/container-linux-config-transpiler/blob/master/doc/getting-started.md).
 
 The default strategy is to follow the `etcd-lock` strategy if etcd is running,
 and to otherwise follow the `reboot` strategy.

@@ -9,18 +9,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Changed
 ### Removed
 
-## [v0.7.0](https://github.com/flatcar-linux/locksmith/releases/tag/v0.7.0)- 30/11/2021
+## [v0.7.0](https://github.com/flatcar/locksmith/releases/tag/v0.7.0)- 30/11/2021
 
 ### Security
-- Update Go dependencies to latest versions ([#6](https://github.com/flatcar-linux/locksmith/pull/6), [#8](https://github.com/flatcar-linux/locksmith/pull/8))
+- Update Go dependencies to latest versions ([#6](https://github.com/flatcar/locksmith/pull/6), [#8](https://github.com/flatcar/locksmith/pull/8))
 
 ### Changed
-- Use Go modules to handle dependencies ([#4](https://github.com/flatcar-linux/locksmith/pull/4))
-- Use `github.com/flatcar-linux/locksmith` as Go module name ([#2](https://github.com/flatcar-linux/locksmith/pull/2))
-- Node will not reboot outside of reboot window in case lock is acquired outside of it ([#10](https://github.com/flatcar-linux/locksmith/pull/10))
+- Use Go modules to handle dependencies ([#4](https://github.com/flatcar/locksmith/pull/4))
+- Use `github.com/flatcar/locksmith` as Go module name ([#2](https://github.com/flatcar/locksmith/pull/2))
+- Node will not reboot outside of reboot window in case lock is acquired outside of it ([#10](https://github.com/flatcar/locksmith/pull/10))
 
 ### Fixed
-- Possible panic on shutdown ([#1](https://github.com/flatcar-linux/locksmith/pull/1))
+- Possible panic on shutdown ([#1](https://github.com/flatcar/locksmith/pull/1))
 
 
 ### v0.6.2

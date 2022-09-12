@@ -10,7 +10,7 @@ else
 endif
 
 VERSION=$(shell git describe --dirty)
-REPO=github.com/flatcar-linux/locksmith
+REPO=github.com/flatcar/locksmith
 LD_FLAGS="-w -s"
 
 export GOPATH=$(shell pwd)/gopath

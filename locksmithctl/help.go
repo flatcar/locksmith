@@ -17,7 +17,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/flatcar-linux/locksmith/version"
+	"github.com/flatcar/locksmith/version"
 	"os"
 	"strings"
 	"text/template"
