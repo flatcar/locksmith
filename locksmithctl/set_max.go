@@ -19,7 +19,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/flatcar-linux/locksmith/lock"
+	"github.com/flatcar/locksmith/lock"
 )
 
 var (

@@ -30,8 +30,8 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/flatcar-linux/locksmith/lock"
-	"github.com/flatcar-linux/locksmith/version"
+	"github.com/flatcar/locksmith/lock"
+	"github.com/flatcar/locksmith/version"
 
 	"go.etcd.io/etcd/client"
 )

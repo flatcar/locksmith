@@ -1,4 +1,4 @@
-module github.com/flatcar-linux/locksmith
+module github.com/flatcar/locksmith
 
 go 1.14
 
