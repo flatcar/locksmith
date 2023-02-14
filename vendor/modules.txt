@@ -14,7 +14,7 @@ github.com/godbus/dbus
 # github.com/godbus/dbus/v5 v5.0.3
 ## explicit
 github.com/godbus/dbus/v5
-# github.com/gogo/protobuf v1.3.1
+# github.com/gogo/protobuf v1.3.2
 ## explicit
 # github.com/hashicorp/errwrap v1.1.0
 ## explicit
