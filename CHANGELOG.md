@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Security
 ### Added
 ### Changed
+- Replace deprecated CPUShares and MemoryLimit control options in the systemd unit with CPUWeight and MemoryHigh ([#20](https://github.com/flatcar/locksmith/pull/20))
+
 ### Removed
 
 ## [v0.7.0](https://github.com/flatcar/locksmith/releases/tag/v0.7.0)- 30/11/2021
