@@ -5,8 +5,8 @@ ConditionVirtualization=!container
 ConditionPathExists=!/usr/.noupdate
 
 [Service]
-CPUShares=16
-MemoryLimit=32M
+CPUWeight=10
+MemoryHigh=32M
 
 # Locksmith requires access to /dev/tty(S)* and /dev/pts/*
 PrivateDevices=false
