@@ -17,13 +17,18 @@ package lock
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/url"
 	"path"
 
-	"go.etcd.io/etcd/client"
+	client "go.etcd.io/etcd/client/v3"
 
 	"golang.org/x/net/context"
 )
+
+// ErrNotFound is used when a key is not found - which means
+// it returns 0 value.
+var ErrNotFound = errors.New("key not found")
 
 const (
 	keyPrefix       = "coreos.com/updateengine/rebootlock"
@@ -33,12 +38,11 @@ const (
 	SemaphorePrefix = keyPrefix + "/" + semaphoreBranch
 )
 
-// KeysAPI is the minimum etcd client.KeysAPI interface EtcdLockClient needs
+// KeysAPI is the minimum etcd client.KV interface EtcdLockClient needs
 // to do its job.
 type KeysAPI interface {
-	Get(ctx context.Context, key string, opts *client.GetOptions) (*client.Response, error)
-	Set(ctx context.Context, key, value string, opts *client.SetOptions) (*client.Response, error)
-	Create(ctx context.Context, key, value string) (*client.Response, error)
+	Get(ctx context.Context, key string, opts ...client.OpOption) (*client.GetResponse, error)
+	Txn(ctx context.Context) client.Txn
 }
 
 // EtcdLockClient is a wrapper around the etcd client that provides
@@ -60,27 +64,31 @@ func NewEtcdLockClient(keyapi KeysAPI, group string) (*EtcdLockClient, error) {
 
 	elc := &EtcdLockClient{keyapi, key}
 	if err := elc.Init(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to init etcd lock client: %w", err)
 	}
 
 	return elc, nil
 }
 
 // Init sets an initial copy of the semaphore if it doesn't exist yet.
+// So we first try to get the value, if the value is not found we create the key
+// with a default semaphore value.
 func (c *EtcdLockClient) Init() error {
 	sem := newSemaphore()
-	b, err := json.Marshal(sem)
+	payload, err := json.Marshal(sem)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to marshal initial semaphore: %w", err)
 	}
 
-	if _, err := c.keyapi.Create(context.Background(), c.keypath, string(b)); err != nil {
-		eerr, ok := err.(client.Error)
-		if ok && eerr.Code == client.ErrorCodeNodeExist {
-			return nil
-		}
-
-		return err
+	if _, err := c.keyapi.Txn(context.TODO()).
+		If(
+			client.Compare(client.Version(c.keypath), "=", 0),
+		).
+		Then(
+			client.OpPut(c.keypath, string(payload)),
+		).
+		Commit(); err != nil {
+		return fmt.Errorf("unable to commit initial transaction: %w", err)
 	}
 
 	return nil
@@ -88,18 +96,27 @@ func (c *EtcdLockClient) Init() error {
 
 // Get fetches the Semaphore from etcd.
 func (c *EtcdLockClient) Get() (*Semaphore, error) {
-	resp, err := c.keyapi.Get(context.Background(), c.keypath, nil)
+	resp, err := c.keyapi.Get(context.Background(), c.keypath, client.WithLastCreate()...)
 	if err != nil {
 		return nil, err
 	}
+
+	// There is no proper way to handle non-existing value for a
+	// given key.
+	// See https://github.com/etcd-io/etcd/issues/6089 for more details.
+	if resp.Count == 0 {
+		return nil, ErrNotFound
+	}
+
+	kv := resp.Kvs[0]
 
 	sem := &Semaphore{}
-	err = json.Unmarshal([]byte(resp.Node.Value), sem)
+	err = json.Unmarshal(kv.Value, sem)
 	if err != nil {
 		return nil, err
 	}
 
-	sem.Index = resp.Node.ModifiedIndex
+	sem.Index = uint64(kv.Version)
 
 	return sem, nil
 }
@@ -114,10 +131,21 @@ func (c *EtcdLockClient) Set(sem *Semaphore) error {
 		return err
 	}
 
-	setopts := &client.SetOptions{
-		PrevIndex: sem.Index,
+	response, err := c.keyapi.Txn(context.Background()).
+		If(
+			client.Compare(client.Version(c.keypath), "=", int64(sem.Index)),
+		).
+		Then(
+			client.OpPut(c.keypath, string(b)),
+		).
+		Commit()
+	if err != nil {
+		return fmt.Errorf("making transaction: %w", err)
 	}
 
-	_, err = c.keyapi.Set(context.Background(), c.keypath, string(b), setopts)
-	return err
+	if !response.Succeeded {
+		return fmt.Errorf("failed to set the semaphore - it got updated in the meantime")
+	}
+
+	return nil
 }
