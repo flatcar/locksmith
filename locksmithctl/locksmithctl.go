@@ -223,7 +223,7 @@ func getClient() (*lock.EtcdLockClient, error) {
 	// It has been shown in the CI (cl.locksmith.cluster) that etcd/v2 recent upgrade has broke the resiliency
 	// of the endpoint.
 	// It can be safely removed once the `etcd` V3 upgrade done.
-	// More details https://github.com/kinvolk/coreos-overlay/pull/1161#issuecomment-891906580.
+	// More details https://github.com/flatcar-archive/coreos-overlay/pull/1161#issuecomment-891906580 
 	for _, ep := range globalFlags.Endpoints {
 		cfg := client.Config{
 			Endpoints: []string{ep},
