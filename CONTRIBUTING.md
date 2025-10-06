@@ -14,7 +14,7 @@ contribution. See the [DCO](DCO) file for details.
 
 # Email and Chat
 
-Read [Participate and contribute](https://github.com/kinvolk/flatcar#participate-and-contribute)
+Read [Participate and contribute](https://github.com/flatcar/flatcar#participate-and-contribute)
 for mailing list and matrix chat information.
 
 Please avoid emailing maintainers found in the MAINTAINERS file directly. They
