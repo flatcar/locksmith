@@ -227,7 +227,7 @@ func TestSetMax(t *testing.T) {
 	c.Init()
 	al := New("a", &c)
 	al.Lock()
-	for i := range []int{3, 2, 1, 0, -1, 0, 1, 2, 3} {
+	for _, i := range []int{3, 2, 1, 0, -1, 0, 1, 2, 3} {
 		al.SetMax(i)
 		if c.sem.Semaphore != i-1 {
 			t.Error("SetMax did not increment the semaphore", c.sem.Semaphore)
