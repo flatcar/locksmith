@@ -1,11 +1,11 @@
 module github.com/flatcar/locksmith
 
-go 1.25.0
+go 1.26.0
 
 require (
 	github.com/coreos/go-systemd/v22 v22.3.2
 	github.com/coreos/pkg v0.0.0-20240122114842-bbd7aa9bf6fb
-	github.com/godbus/dbus/v5 v5.0.6
+	github.com/godbus/dbus/v5 v5.2.2
 	github.com/rkt/rkt v1.30.0
 	go.etcd.io/etcd/client/v2 v2.305.33
 	golang.org/x/net v0.56.0
@@ -22,4 +22,5 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.33 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.33 // indirect
+	golang.org/x/sys v0.48.0 // indirect
 )
