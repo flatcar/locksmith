@@ -33,7 +33,7 @@ import (
 	"github.com/flatcar/locksmith/lock"
 	"github.com/flatcar/locksmith/version"
 
-	"go.etcd.io/etcd/client"
+	"go.etcd.io/etcd/client/v2"
 )
 
 const (

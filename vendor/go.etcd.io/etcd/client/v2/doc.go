@@ -21,7 +21,7 @@ Create a Config and exchange it for a Client:
 		"net/http"
 		"context"
 
-		"go.etcd.io/etcd/client"
+		"go.etcd.io/etcd/client/v2"
 	)
 
 	cfg := client.Config{
@@ -68,6 +68,5 @@ Use a custom context to set timeouts on your operations:
 			// handle error
 		}
 	}
-
 */
 package client
