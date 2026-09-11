@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/coreos/go-systemd/login1"
+	"github.com/coreos/go-systemd/v22/login1"
 	"github.com/flatcar/locksmith/lock"
 	"github.com/flatcar/locksmith/pkg/machineid"
 )
