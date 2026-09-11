@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/coreos/go-systemd/v22 v22.3.2
-	github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f
+	github.com/coreos/pkg v0.0.0-20240122114842-bbd7aa9bf6fb
 	github.com/godbus/dbus/v5 v5.0.6
 	github.com/rkt/rkt v1.30.0
 	go.etcd.io/etcd/client/v2 v2.305.33
