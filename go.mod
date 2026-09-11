@@ -8,7 +8,6 @@ require (
 	github.com/godbus/dbus/v5 v5.2.2
 	github.com/rkt/rkt v1.30.0
 	go.etcd.io/etcd/client/v2 v2.305.33
-	golang.org/x/net v0.56.0
 )
 
 require (

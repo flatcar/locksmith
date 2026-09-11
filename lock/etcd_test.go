@@ -15,12 +15,12 @@
 package lock
 
 import (
+	"context"
 	"errors"
 	"reflect"
 	"testing"
 
 	"go.etcd.io/etcd/client/v2"
-	"golang.org/x/net/context"
 )
 
 type testEtcdClient struct {
