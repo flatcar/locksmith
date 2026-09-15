@@ -15,14 +15,13 @@
 package lock
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/url"
 	"path"
 
-	"go.etcd.io/etcd/client"
-
-	"golang.org/x/net/context"
+	"go.etcd.io/etcd/client/v2"
 )
 
 const (

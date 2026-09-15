@@ -28,7 +28,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/coreos/go-systemd/login1"
+	"github.com/coreos/go-systemd/v22/login1"
 	"github.com/coreos/pkg/capnslog"
 
 	"github.com/flatcar/locksmith/lock"
