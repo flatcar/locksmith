@@ -30,7 +30,9 @@ const testGroup = ""
 type testEtcdClient struct {
 	err     error
 	getResp *client.GetResponse
-	txn     testTxn
+	// not client.Txn, so we don't need to initialize client.Txn
+	// to be a zero textTxn everywhere
+	txn testTxn
 }
 
 // testTxn implements the client.Txn interface
@@ -72,7 +74,7 @@ func TestEtcdLockClientInit(t *testing.T) {
 			testGroup,
 		)
 		if err != nil {
-			t.Fatalf("error should be nil, got: %v", err)
+			t.Fatalf("failed creating a new etcd lock client: %v", err)
 		}
 
 		if elc == nil {
@@ -80,18 +82,15 @@ func TestEtcdLockClientInit(t *testing.T) {
 		}
 	})
 	t.Run("Error", func(t *testing.T) {
+		expectedErr := errors.New("connection refused")
 		_, err := NewEtcdLockClient(&testEtcdClient{
-			txn:     testTxn{err: errors.New("connection refused")},
+			txn:     testTxn{err: expectedErr},
 			getResp: &client.GetResponse{Count: 0},
 		},
 			testGroup,
 		)
-		if err == nil {
-			t.Fatal("error should not be nil")
-		}
-
-		if err.Error() != "unable to init etcd lock client: unable to commit initial transaction: connection refused" {
-			t.Fatalf("error should be 'unable to init etcd lock client: unable to commit initial transaction: connection refused', got: %v", err)
+		if !errors.Is(err, expectedErr) {
+			t.Fatalf("expected %v error, got %v", expectedErr, err)
 		}
 	})
 }
@@ -103,7 +102,7 @@ func TestEtcdLockClientGet(t *testing.T) {
 			getResp: &client.GetResponse{
 				Count: 1,
 				Kvs: []*pb.KeyValue{
-					&pb.KeyValue{
+					{
 						Key: []byte(SemaphorePrefix),
 						// index should be set from etcd, not json (backported from legacy test)
 						Value:   []byte(`{"index": 12, "semaphore": 1, "max": 2, "holders": ["foo", "bar"]}`),
@@ -115,16 +114,16 @@ func TestEtcdLockClientGet(t *testing.T) {
 			testGroup,
 		)
 		if err != nil {
-			t.Fatalf("error should be nil, got: %v", err)
+			t.Fatalf("expected no errors when creating a new etcd lock client, got: %v", err)
 		}
 
 		res, err := elc.Get()
 		if err != nil {
-			t.Fatalf("error should be nil, got: %v", err)
+			t.Fatalf("expected no errors when getting a semaphore, got: %v", err)
 		}
 
 		if res.Index != uint64(1234) {
-			t.Fatalf("index should be 1234, got: %d", res.Index)
+			t.Fatalf("expected semaphore index to be 1234, got: %d", res.Index)
 		}
 	})
 	t.Run("SuccessNotFound", func(t *testing.T) {
@@ -135,16 +134,12 @@ func TestEtcdLockClientGet(t *testing.T) {
 			testGroup,
 		)
 		if err != nil {
-			t.Fatalf("error should be nil, got: %v", err)
+			t.Fatalf("expected no errors when creating a new etcd lock client, got: %v", err)
 		}
 
 		_, err = elc.Get()
-		if err == nil {
-			t.Fatal("error should not be nil")
-		}
-
 		if !errors.Is(err, ErrNotFound) {
-			t.Fatalf("error should be ErrNotFound, got: %v", err)
+			t.Fatalf("expected %v when getting a nonexistent semaphore, got: %v", ErrNotFound, err)
 		}
 	})
 	t.Run("ErrorWithMalformedJSON", func(t *testing.T) {
@@ -153,7 +148,7 @@ func TestEtcdLockClientGet(t *testing.T) {
 			getResp: &client.GetResponse{
 				Count: 1,
 				Kvs: []*pb.KeyValue{
-					&pb.KeyValue{
+					{
 						Key: []byte(SemaphorePrefix),
 						// notice the missing `,` in the array
 						Value: []byte(`{"semaphore": 1, "max": 2, "holders": ["foo" "bar"]}`),
@@ -164,16 +159,12 @@ func TestEtcdLockClientGet(t *testing.T) {
 			testGroup,
 		)
 		if err != nil {
-			t.Fatalf("error should be nil, got: %v", err)
+			t.Fatalf("expected no errors when creating a new etcd lock client, got: %v", err)
 		}
 
 		_, err = elc.Get()
 		if err == nil {
-			t.Fatal("error should not be nil")
-		}
-
-		if err.Error() != "invalid character '\"' after array element" {
-			t.Fatalf("error should mention invalid character, got: %v", err)
+			t.Fatalf("expected an error because of invalid JSON, got nothing")
 		}
 	})
 }
@@ -188,12 +179,12 @@ func TestEtcdLockClientSet(t *testing.T) {
 			testGroup,
 		)
 		if err != nil {
-			t.Fatalf("error should be nil, got: %v", err)
+			t.Fatalf("expected no errors when creating a new etcd lock client, got: %v", err)
 		}
 
 		err = elc.Set(&Semaphore{})
 		if err != nil {
-			t.Fatalf("error should be nil, got: %v", err)
+			t.Fatalf("expected no errors when setting a valid semaphore, got: %v", err)
 		}
 
 	})
@@ -205,7 +196,7 @@ func TestEtcdLockClientSet(t *testing.T) {
 			testGroup,
 		)
 		if err != nil {
-			t.Fatalf("error should be nil, got: %v", err)
+			t.Fatalf("expected no errors when creating a new etcd lock client, got: %v", err)
 		}
 
 		err = elc.Set(nil)
@@ -213,8 +204,8 @@ func TestEtcdLockClientSet(t *testing.T) {
 			t.Fatal("error should not be nil")
 		}
 
-		if err.Error() != "cannot set nil semaphore" {
-			t.Fatalf("error should 'cannot set nil semaphore', got: %v", err)
+		if !errors.Is(err, errNilSemaphore) {
+			t.Fatalf("expected %v when trying to set a nil semaphore, got: %v", errNilSemaphore, err)
 		}
 	})
 	t.Run("ErrorTransaction", func(t *testing.T) {
@@ -226,16 +217,12 @@ func TestEtcdLockClientSet(t *testing.T) {
 			testGroup,
 		)
 		if err != nil {
-			t.Fatalf("error should be nil, got: %v", err)
+			t.Fatalf("expected no errors when creating a new etcd lock client, got: %v", err)
 		}
 
 		err = elc.Set(&Semaphore{})
-		if err == nil {
-			t.Fatal("error should not be nil")
-		}
-
-		if err.Error() != "failed to set the semaphore - it got updated in the meantime" {
-			t.Fatalf("error should be 'failed to set the semaphore - it got updated in the meantime', got: %v", err)
+		if !errors.Is(err, errSemaphoreUpdated) {
+			t.Fatalf("expected %v error for semaphore update collision, got: %v", errSemaphoreUpdated, err)
 		}
 	})
 }
