@@ -79,7 +79,7 @@ func (c *EtcdLockClient) Init() error {
 		return fmt.Errorf("unable to marshal initial semaphore: %w", err)
 	}
 
-	if _, err := c.keyapi.Txn(context.TODO()).
+	if _, err := c.keyapi.Txn(context.Background()).
 		If(
 			client.Compare(client.Version(c.keypath), "=", 0),
 		).
