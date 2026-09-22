@@ -221,6 +221,7 @@ func TestEtcdLockClientSet(t *testing.T) {
 		elc, err := NewEtcdLockClient(&testEtcdClient{
 			err:     nil,
 			getResp: &client.GetResponse{Count: 0},
+			txn:     testTxn{txnSuccess: false},
 		},
 			testGroup,
 		)
