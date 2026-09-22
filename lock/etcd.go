@@ -27,7 +27,11 @@ import (
 
 // ErrNotFound is used when a key is not found - which means
 // it returns 0 value.
-var ErrNotFound = errors.New("key not found")
+var (
+	ErrNotFound         = errors.New("key not found")
+	errNilSemaphore     = errors.New("cannot set nil semaphore")
+	errSemaphoreUpdated = errors.New("semaphore got updated in the meantime")
+)
 
 const (
 	keyPrefix       = "coreos.com/updateengine/rebootlock"
@@ -76,7 +80,7 @@ func (c *EtcdLockClient) Init() error {
 	sem := newSemaphore()
 	payload, err := json.Marshal(sem)
 	if err != nil {
-		return fmt.Errorf("unable to marshal initial semaphore: %w", err)
+		return fmt.Errorf("marshalling initial semaphore: %w", err)
 	}
 
 	if _, err := c.keyapi.Txn(context.Background()).
@@ -87,7 +91,7 @@ func (c *EtcdLockClient) Init() error {
 			client.OpPut(c.keypath, string(payload)),
 		).
 		Commit(); err != nil {
-		return fmt.Errorf("unable to commit initial transaction: %w", err)
+		return fmt.Errorf("committing initial transaction: %w", err)
 	}
 
 	return nil
@@ -95,7 +99,7 @@ func (c *EtcdLockClient) Init() error {
 
 // Get fetches the Semaphore from etcd.
 func (c *EtcdLockClient) Get() (*Semaphore, error) {
-	resp, err := c.keyapi.Get(context.Background(), c.keypath, client.WithLastCreate()...)
+	resp, err := c.keyapi.Get(context.Background(), c.keypath)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +127,7 @@ func (c *EtcdLockClient) Get() (*Semaphore, error) {
 // Set sets a Semaphore in etcd.
 func (c *EtcdLockClient) Set(sem *Semaphore) error {
 	if sem == nil {
-		return errors.New("cannot set nil semaphore")
+		return errNilSemaphore
 	}
 	b, err := json.Marshal(sem)
 	if err != nil {
@@ -143,7 +147,7 @@ func (c *EtcdLockClient) Set(sem *Semaphore) error {
 	}
 
 	if !response.Succeeded {
-		return fmt.Errorf("failed to set the semaphore - it got updated in the meantime")
+		return errSemaphoreUpdated
 	}
 
 	return nil

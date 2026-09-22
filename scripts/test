@@ -1,4 +1,4 @@
-#!/bin/bash -e
+\#!/bin/bash -e
 
 MODULE=$(go list -m)
 PKGS=$(go list ./...)
@@ -11,7 +11,7 @@ echo "Running vet..."
 go vet $PKGS
 
 echo "Running gofmt..."
-fmtRes=$(gofmt -l $PKGS_DIRS)
+fmtRes=$(gofmt -s -l $PKGS_DIRS)
 if [[ -n "${fmtRes}" ]]; then
 	echo -e "gofmt checking failed:\n${fmtRes}"
 	exit 2
