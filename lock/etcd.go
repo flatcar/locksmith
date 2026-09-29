@@ -48,6 +48,10 @@ type KeysAPI interface {
 	Txn(ctx context.Context) client.Txn
 }
 
+// To make sure that KeysAPI interface is indeed a subset of client.KV
+// interface.
+var _ KeysAPI = client.KV(nil)
+
 // EtcdLockClient is a wrapper around the etcd client that provides
 // simple primitives to operate on the internal semaphore and holders
 // structs through etcd.
@@ -85,6 +89,9 @@ func (c *EtcdLockClient) Init() error {
 
 	if _, err := c.keyapi.Txn(context.Background()).
 		If(
+			// If key has zero as Version, it means that
+			// the key is absent. Existing keys always
+			// have version greater than zero.
 			client.Compare(client.Version(c.keypath), "=", 0),
 		).
 		Then(
@@ -119,7 +126,7 @@ func (c *EtcdLockClient) Get() (*Semaphore, error) {
 		return nil, err
 	}
 
-	sem.Index = uint64(kv.Version)
+	sem.Index = uint64(kv.ModRevision)
 
 	return sem, nil
 }
@@ -136,7 +143,7 @@ func (c *EtcdLockClient) Set(sem *Semaphore) error {
 
 	response, err := c.keyapi.Txn(context.Background()).
 		If(
-			client.Compare(client.Version(c.keypath), "=", int64(sem.Index)),
+			client.Compare(client.ModRevision(c.keypath), "=", int64(sem.Index)),
 		).
 		Then(
 			client.OpPut(c.keypath, string(b)),

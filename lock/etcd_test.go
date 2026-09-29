@@ -105,8 +105,8 @@ func TestEtcdLockClientGet(t *testing.T) {
 					{
 						Key: []byte(SemaphorePrefix),
 						// index should be set from etcd, not json (backported from legacy test)
-						Value:   []byte(`{"index": 12, "semaphore": 1, "max": 2, "holders": ["foo", "bar"]}`),
-						Version: 1234,
+						Value:       []byte(`{"index": 12, "semaphore": 1, "max": 2, "holders": ["foo", "bar"]}`),
+						ModRevision: 1234,
 					},
 				},
 			},
